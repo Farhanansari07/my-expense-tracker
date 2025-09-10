@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Expense Tracker</title>
+    <!-- Inter Font -->
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for visual analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            @apply bg-gray-50 text-gray-800;
+        }
+        .container {
+            @apply max-w-2xl mx-auto p-4 md:p-8;
+        }
+        .card {
+            @apply bg-white p-6 rounded-3xl shadow-xl transition-all duration-300 transform hover:scale-[1.01] hover:shadow-2xl;
+        }
+        .btn {
+            @apply w-full px-6 py-3 rounded-xl font-semibold text-white transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg focus:ring-4 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed;
+        }
+        .gradient-bg-1 {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+        }
+        .gradient-bg-2 {
+            background: linear-gradient(135deg, #10b981, #34d399);
+        }
+        .gradient-bg-3 {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        }
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .expense-item {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-purple-50 min-h-screen flex items-center justify-center py-10">
+
+<div class="container space-y-10">
+    <!-- Header -->
+    <div class="text-center">
+        <h1 class="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight tracking-tighter animate-fadeIn">AI Expense Tracker</h1>
+        <p class="mt-2 text-lg text-gray-600 animate-fadeIn" style="animation-delay: 0.2s;">Smart insights for smart spending.</p>
+    </div>
+    
+    <!-- Bifurcation into two main columns for a clean look -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Left Column: Add Expense & AI Tips -->
+        <div class="space-y-8">
+            <!-- Add Expense Section -->
+            <div class="card space-y-4 animate-fadeIn">
+                <h2 class="text-2xl font-bold gradient-text gradient-bg-1">Add New Expense</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <input type="text" id="description" placeholder="e.g., Coffee" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3">
+                    </div>
+                    <div>
+                        <label for="amount" class="block text-sm font-medium text-gray-700">Amount (₹)</label>
+                        <input type="number" id="amount" placeholder="e.g., 250" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3">
+                    </div>
+                    <button id="addExpenseBtn" class="btn gradient-bg-1 focus:ring-indigo-500">
+                        Add Expense
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Insights Section -->
+            <div class="card animate-fadeIn" style="animation-delay: 0.4s;">
+                <h2 class="text-2xl font-bold gradient-text gradient-bg-2">AI Savings Tips</h2>
+                <div id="savingsTip" class="text-md text-gray-600 italic mt-4">
+                    No tips yet. Add some expenses to get started!
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Right Column: Visual Analytics & Streak -->
+        <div class="space-y-8">
+            <!-- Visual Analytics Section -->
+            <div class="card animate-fadeIn">
+                <h2 class="text-2xl font-bold gradient-text gradient-bg-3">Visual Analytics</h2>
+                <div class="flex justify-center mt-4">
+                    <canvas id="expenseChart" class="max-w-md"></canvas>
+                </div>
+            </div>
+
+            <!-- Gamification Streak Section -->
+            <div class="card animate-fadeIn" style="animation-delay: 0.6s;">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold gradient-text gradient-bg-1">Saving Streak</h2>
+                        <div class="text-4xl font-extrabold text-indigo-600 mt-2">
+                            <span id="streakCount">0</span> days
+                        </div>
+                    </div>
+                    <button id="markStreakBtn" class="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg focus:ring-4 focus:ring-opacity-50 bg-yellow-500 hover:bg-yellow-600">
+                        Mark Today's Streak
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Transaction List -->
+    <div class="card animate-fadeIn">
+        <h2 class="text-2xl font-bold gradient-text gradient-bg-1">Recent Transactions</h2>
+        <div id="transactionList" class="mt-4 space-y-4">
+            <!-- Expenses will be dynamically added here -->
+            <p class="text-center text-gray-500 italic">No transactions added yet.</p>
+        </div>
+    </div>
+
+    <!-- Custom Modal/Message Box -->
+    <div id="messageModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl p-8 max-w-sm w-full shadow-lg text-center animate-fadeIn">
+            <p id="modalMessage" class="text-lg font-semibold text-gray-800"></p>
+            <button id="modalCloseBtn" class="mt-6 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg">OK</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // DOM elements
+    const addExpenseBtn = document.getElementById('addExpenseBtn');
+    const markStreakBtn = document.getElementById('markStreakBtn');
+    const descriptionInput = document.getElementById('description');
+    const amountInput = document.getElementById('amount');
+    const transactionList = document.getElementById('transactionList');
+    const savingsTipDiv = document.getElementById('savingsTip');
+    const streakCountSpan = document.getElementById('streakCount');
+    const ctx = document.getElementById('expenseChart').getContext('2d');
+    const messageModal = document.getElementById('messageModal');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+    // State variables from localStorage
+    let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+    let streakCount = parseInt(localStorage.getItem('streakCount')) || 0;
+    let lastStreakDate = localStorage.getItem('lastStreakDate') || '';
+    let myChart;
+
+    // Show custom modal
+    function showModal(message) {
+        modalMessage.textContent = message;
+        messageModal.classList.remove('hidden');
+    }
+
+    modalCloseBtn.addEventListener('click', () => {
+        messageModal.classList.add('hidden');
+    });
+
+    // Categorization data from the provided Excel sheet
+    const categoryKeywords = {
+        "Food & Beverages": ["pizza", "burger", "fries", "paneer jeera rice", "kolhapuri paneer", "punjabi thali", "camp burger", "cake", "ice cream", "chocolate", "biscuits", "candy", "wafers", "lassi", "cold drink", "wada pav", "poha", "breakfast", "zomato", "swiggy", "street food", "juice"],
+        "Housing & Utilities": ["rent", "light bill", "water bill", "internet", "wifi", "maintenance", "jet faucet"],
+        "Transportation": ["metro recharge", "metro top-up", "new metro card", "auto", "bus pass", "cab", "uber", "ola", "bike petrol", "cycle repairs", "petrol", "metro"],
+        "Education & Academic Needs": ["pouch", "pens", "notebook", "the subtle art book", "xerox", "stationary", "college cyber hunt", "maths assignment", "assignment papers", "richest man book", "the 48 laws book", "pyqs", "attitude is everything book", "course", "fee"],
+        "Communication & Digital": ["mobile recharge", "cell recharge", "internet packs", "ott subscriptions", "cloud storage", "mobile", "sim"],
+        "Food Services (Mess & Dining Plans)": ["mess fees", "hostel meal plan", "cafeteria subscription", "mess"],
+        "Personal Care & Household": ["soap", "shampoo", "handwash", "toothpaste", "hair oil", "laundry", "facewash", "cleaning liquid", "mop"],
+        "Leisure & Entertainment": ["coupons", "movies", "gaming", "sports event tickets", "concerts", "netflix", "hobbies", "music apps"],
+        "Health & Wellness": ["medicine", "doctor", "gym", "medication"],
+        "Clothing & Accessories": ["shoe rack", "tshirt", "pants", "shoes", "jacket", "clothing"]
+    };
+
+    // Smart categorization function based on the provided keywords
+    function categorizeExpense(description) {
+        description = description.toLowerCase();
+        for (const category in categoryKeywords) {
+            if (categoryKeywords[category].some(keyword => description.includes(keyword))) {
+                return category;
+            }
+        }
+        return 'Miscellaneous';
+    }
+
+    // Function to update the chart
+    function updateChart() {
+        if (myChart) myChart.destroy();
+        const categoryData = expenses.reduce((acc, exp) => {
+            acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
+            return acc;
+        }, {});
+        const labels = Object.keys(categoryData);
+        const data = Object.values(categoryData);
+        const colors = ['#6366f1', '#a855f7', '#10b981', '#34d399', '#f59e0b', '#fbbf24', '#eab308', '#ec4899', '#9333ea', '#db2777'];
+        myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Spending by Category',
+                    data: data,
+                    backgroundColor: colors.slice(0, labels.length).map(c => `${c}B3`),
+                    borderColor: '#fff',
+                    borderWidth: 2,
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'top' }, title: { display: true, text: 'Spending Breakdown' } } }
+        });
+    }
+
+    // Function to add a new expense
+    function addExpense() {
+        const description = descriptionInput.value.trim();
+        const amount = parseFloat(amountInput.value);
+
+        if (!description || isNaN(amount) || amount <= 0) {
+            showModal("Please enter a valid description and amount.");
+            return;
+        }
+
+        const category = categorizeExpense(description);
+        const newExpense = { description, amount, category, date: new Date().toISOString() };
+        expenses.unshift(newExpense); // Add to the beginning of the array
+
+        // Save to localStorage
+        localStorage.setItem('expenses', JSON.stringify(expenses));
+        savingsTipDiv.textContent = generateSavingsTip();
+
+        // Update the UI
+        updateTransactionList();
+        updateChart();
+        
+        // Clear input fields
+        descriptionInput.value = '';
+        amountInput.value = '';
+    }
+
+    // Function to generate a savings tip
+    function generateSavingsTip() {
+        const categorySpending = expenses.reduce((acc, exp) => {
+            acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
+            return acc;
+        }, {});
+        const sortedCategories = Object.entries(categorySpending).sort((a, b) => b[1] - a[1]);
+        const highestCategory = sortedCategories.length > 0 ? sortedCategories[0][0] : null;
+
+        if (highestCategory === 'Food & Beverages' && categorySpending['Food & Beverages'] > 1000) {
+            return `You've spent a lot on food. Try using the hostel mess more often to save money.`;
+        } else if (highestCategory === 'Transportation' && categorySpending['Transportation'] > 500) {
+            return `High travel expenses. Consider sharing rides with classmates or using public transport to cut costs.`;
+        } else if (highestCategory === 'Leisure & Entertainment' && categorySpending['Leisure & Entertainment'] > 750) {
+            return `Entertainment spending is high. Look for free events on campus or try studying in the library to save money.`;
+        } else {
+            const tips = ["Track your spending daily to stay on top of your budget.", "Review your subscriptions. Do you still need them all?", "Pack your own lunch instead of buying it to save money.", "Set a weekly budget for each category and stick to it.", "Look for student discounts on services and products."];
+            return tips[Math.floor(Math.random() * tips.length)];
+        }
+    }
+
+    // Function to update the transaction list
+    function updateTransactionList() {
+        if (expenses.length === 0) {
+            transactionList.innerHTML = '<p class="text-center text-gray-500 italic">No transactions added yet.</p>';
+            return;
+        }
+        transactionList.innerHTML = '';
+        expenses.forEach((exp, index) => {
+            const expenseItem = document.createElement('div');
+            expenseItem.className = 'expense-item flex justify-between items-center bg-gray-50 p-4 rounded-xl';
+            expenseItem.innerHTML = `
+                <div>
+                    <div class="font-medium text-gray-900">${exp.description}</div>
+                    <div class="text-sm text-gray-500">${exp.category}</div>
+                </div>
+                <div class="font-bold text-gray-900">₹${exp.amount.toFixed(2)}</div>
+            `;
+            expenseItem.style.animationDelay = `${index * 0.1}s`;
+            transactionList.appendChild(expenseItem);
+        });
+    }
+
+    // Function to check and update streak button state
+    function checkStreakButtonState() {
+        const today = new Date().toDateString();
+        if (lastStreakDate === today) {
+            markStreakBtn.disabled = true;
+            markStreakBtn.textContent = 'Streak Logged Today';
+        } else {
+            markStreakBtn.disabled = false;
+            markStreakBtn.textContent = 'Mark Today\'s Streak';
+        }
+    }
+
+    // Event listener for the "Add Expense" button
+    addExpenseBtn.addEventListener('click', addExpense);
+
+    // Event listener for the "Mark Streak" button
+    markStreakBtn.addEventListener('click', () => {
+        const today = new Date().toDateString();
+        if (lastStreakDate !== today) {
+            streakCount++;
+            lastStreakDate = today;
+            localStorage.setItem('streakCount', streakCount);
+            localStorage.setItem('lastStreakDate', lastStreakDate);
+            streakCountSpan.textContent = streakCount;
+            markStreakBtn.disabled = true;
+            markStreakBtn.textContent = 'Streak Logged Today';
+            showModal(`Congratulations! You've successfully marked your ${streakCount}-day saving streak.`);
+        }
+    });
+
+    // Initial data load and UI update
+    updateTransactionList();
+    updateChart();
+    checkStreakButtonState();
+    streakCountSpan.textContent = streakCount;
+    savingsTipDiv.textContent = generateSavingsTip();
+});
+</script>
+
+</body>
+</html>
